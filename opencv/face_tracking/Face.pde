@@ -72,7 +72,7 @@ class Face {
     prevDim.y = currDim.y;
   }
 
-  // send each face individually over syphon (woah)
+  // send each face individually over syphon
   void sendSyphon() {
     PImage faceImg = img.get(int(currPos.x*scaler), int(currPos.y*scaler), int(currDim.x*scaler), int(currDim.y*scaler));
     faceImg.resize(width, height);

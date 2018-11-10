@@ -1,10 +1,18 @@
+// largely based on Dan Shiffman's tutorial
+// OpenCV Matching Faces Over Time
+// https://shiffman.net/general/2011/04/26/opencv-matching-faces-over-time/
+
+// optionally, feed the data to Arduino
 import processing.serial.*;  // import serial library
 Serial myPort;  // Create object from Serial class
+boolean SERIAL = false;
 
+// optionally, feed the data to Syphon
 import codeanticode.syphon.*;
 PGraphics canvas;
 PImage img;
 SyphonServer server;
+boolean SYPHON = false;
 
 import processing.video.*;
 import gab.opencv.*;
@@ -34,14 +42,19 @@ void settings() {
 }
 
 void setup() {
-  printArray(Serial.list());
-  String portName = Serial.list()[2];
-  myPort = new Serial(this, portName, 9600);
+  if (SERIAL) {
+    printArray(Serial.list());
+    String portName = Serial.list()[2];
+    myPort = new Serial(this, portName, 9600);
+  }
 
   noLoop();
   canvas = createGraphics(width, height, P3D);
   img = new PImage(camW, camH);
-  server = new SyphonServer(this, "Face Syphon");
+
+  if (SYPHON) {
+    server = new SyphonServer(this, "Face Syphon");
+  }
 
   // init cam
   printArray(Capture.list());
@@ -153,7 +166,8 @@ void draw() {
 
   for (Face f : faceList) {
     f.display();
-    f.sendSyphon();
+    if (SYPHON)
+      f.sendSyphon();
   }
 
   canvas.endDraw();
@@ -165,13 +179,16 @@ void draw() {
     PImage faceImg = img.get(int(f.currPos.x*scaler), int(f.currPos.y*scaler), int(f.currDim.x*scaler), int(f.currDim.y*scaler));
     faceImg.resize(width, height);
 
-    server.sendImage(faceImg);
+    if (SYPHON)
+      server.sendImage(faceImg);
 
-    // send face pos out via serial
-    int faceMiddle = int(f.currPos.x*scaler + (f.currDim.x*scaler / 2));
-    int facePos = int(map(faceMiddle, 0, width, outMin, outMax));
-    myPort.write(facePos);  // write x and y vars to serial
-    // println(facePos);
+    // send face pos out via serial if enabled
+    if (SERIAL) {
+      int faceMiddle = int(f.currPos.x*scaler + (f.currDim.x*scaler / 2));
+      int facePos = int(map(faceMiddle, 0, width, outMin, outMax));
+      myPort.write(facePos);  // write x and y vars to serial
+      // println(facePos);
+    }
   }
 
   image(canvas, 0, 0);
